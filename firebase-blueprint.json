@@ -1,0 +1,179 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile and roles",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string" },
+        "name": { "type": "string" },
+        "isAdmin": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["email"]
+    },
+    "Category": {
+      "title": "Category",
+      "description": "Mokeb category",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "description": { "type": "string" }
+      },
+      "required": ["name"]
+    },
+    "Mokeb": {
+      "title": "Mokeb",
+      "description": "Mokeb station details",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "managerName": { "type": "string" },
+        "phone": { "type": "string" },
+        "province": { "type": "string" },
+        "city": { "type": "string" },
+        "address": { "type": "string" },
+        "lat": { "type": "number" },
+        "lng": { "type": "number" },
+        "categoryId": { "type": "string" },
+        "services": { "type": "array", "items": { "type": "string" } },
+        "ownerId": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "approved", "rejected"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "managerName", "phone", "province", "city", "address", "categoryId", "ownerId", "status", "createdAt"]
+    },
+    "Ticket": {
+      "title": "Ticket",
+      "description": "Support tickets between users and admins",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "userDisplayName": { "type": "string" },
+        "userEmail": { "type": "string" },
+        "mokebName": { "type": "string" },
+        "subject": { "type": "string" },
+        "category": { "type": "string" },
+        "priority": { "type": "string" },
+        "status": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" },
+        "lastMessageText": { "type": "string" },
+        "lastSenderRole": { "type": "string" },
+        "unreadByAdmin": { "type": "boolean" },
+        "unreadByUser": { "type": "boolean" }
+      },
+      "required": ["userId", "subject", "category", "priority", "status", "createdAt"]
+    },
+    "TicketMessage": {
+      "title": "TicketMessage",
+      "description": "Messages inside a support ticket",
+      "type": "object",
+      "properties": {
+        "ticketId": { "type": "string" },
+        "senderId": { "type": "string" },
+        "senderName": { "type": "string" },
+        "senderRole": { "type": "string" },
+        "text": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["ticketId", "senderId", "senderName", "senderRole", "text", "createdAt"]
+    },
+    "OfficialNotice": {
+      "title": "OfficialNotice",
+      "description": "Official bulleting and announcements by the central system",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "content": { "type": "string" },
+        "category": { "type": "string", "enum": ["critical", "warning", "info"] },
+        "authority": { "type": "string" },
+        "authorityName": { "type": "string" },
+        "time": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "content", "category", "authority", "createdAt"]
+    },
+    "OfficialAuthority": {
+      "title": "OfficialAuthority",
+      "description": "Custom authorities defined by the admin",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name"]
+    },
+    "OperatorAnnouncement": {
+      "title": "OperatorAnnouncement",
+      "description": "Announcements targeted directly at Mokeb operators with file attachments",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "content": { "type": "string" },
+        "importance": { "type": "string", "enum": ["critical", "warning", "info"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "attachmentName": { "type": "string" },
+        "attachmentUrl": { "type": "string" }
+      },
+      "required": ["title", "content", "importance", "createdAt"]
+    },
+    "VisitorStat": {
+      "title": "VisitorStat",
+      "description": "Visitor count statistics",
+      "type": "object",
+      "properties": {
+        "count": { "type": "number" },
+        "lastUpdated": { "type": "string", "format": "date-time" }
+      },
+      "required": ["count", "lastUpdated"]
+    }
+  },
+  "firestore": {
+    "users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "User profiles"
+    },
+    "categories/{categoryId}": {
+      "schema": { "$ref": "#/entities/Category" },
+      "description": "Categories managed by admins"
+    },
+    "mokebs/{mokebId}": {
+      "schema": { "$ref": "#/entities/Mokeb" },
+      "description": "Mokeb submissions"
+    },
+    "tickets/{ticketId}": {
+      "schema": { "$ref": "#/entities/Ticket" },
+      "description": "Support tickets"
+    },
+    "tickets/{ticketId}/messages/{messageId}": {
+      "schema": { "$ref": "#/entities/TicketMessage" },
+      "description": "Support ticket messages"
+    },
+    "official_notices/{noticeId}": {
+      "schema": { "$ref": "#/entities/OfficialNotice" },
+      "description": "Official notices and directives managed by admins"
+    },
+    "official_authorities/{authorityId}": {
+      "schema": { "$ref": "#/entities/OfficialAuthority" },
+      "description": "Dynamic issuing authorities managed by admins"
+    },
+    "operator_announcements/{announcementId}": {
+      "schema": { "$ref": "#/entities/OperatorAnnouncement" },
+      "description": "Direct announcements for Mokeb operators containing file uploads"
+    },
+    "global_stats/{statId}": {
+      "schema": { "$ref": "#/entities/VisitorStat" },
+      "description": "Global visitor count"
+    },
+    "mokeb_stats/{mokebId}": {
+      "schema": { "$ref": "#/entities/VisitorStat" },
+      "description": "Visitor counts per mokeb"
+    },
+    "category_stats/{categoryId}": {
+      "schema": { "$ref": "#/entities/VisitorStat" },
+      "description": "Visitor counts per category"
+    }
+  }
+}

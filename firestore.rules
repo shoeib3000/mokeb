@@ -1,0 +1,129 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+        match /{document=**} {
+            allow read, write: if true;
+        }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) 
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('isAdmin', false) == true;
+    }
+
+    function isOwner(ownerId) {
+      return isSignedIn() && request.auth.uid == ownerId;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // User Model
+    function isValidUser(data) {
+      return data.keys().hasAll(['email']) 
+        && data.email is string && data.email.size() <= 150
+        && (!('name' in data) || (data.name is string && data.name.size() <= 100))
+        && (!('isAdmin' in data) || data.isAdmin is bool)
+        && (!('createdAt' in data) || data.createdAt == request.time);
+    }
+
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isOwner(userId)
+                    && isValidId(userId)
+                    && isValidUser(incoming())
+                    && incoming().keys().size() <= 4
+                    && (!('isAdmin' in incoming()) || incoming().isAdmin == false || (request.auth.token.email == 'shoeibfaraj@gmail.com' && incoming().isAdmin == true));
+      allow update: if (isOwner(userId) && isValidUser(incoming())
+                       && (
+                         incoming().diff(existing()).affectedKeys().hasOnly(['name']) 
+                         || (incoming().diff(existing()).affectedKeys().hasOnly(['name', 'isAdmin']) && request.auth.token.email == 'shoeibfaraj@gmail.com')
+                       )
+                     ) || isAdmin();
+    }
+
+    // Category Model
+    function isValidCategory(data) {
+      return data.keys().hasAll(['name']) 
+        && data.name is string && data.name.size() <= 50
+        && (!('description' in data) || (data.description is string && data.description.size() <= 200));
+    }
+
+    match /categories/{categoryId} {
+      allow read: if true; // Publicly readable
+      allow create: if isAdmin() && isValidId(categoryId) && isValidCategory(incoming()) && incoming().keys().size() <= 2;
+      allow update: if isAdmin() && isValidCategory(incoming()) && incoming().diff(existing()).affectedKeys().hasOnly(['name', 'description']);
+      allow delete: if isAdmin();
+    }
+
+    // Mokeb Model
+    function isValidMokeb(data) {
+       // Simplified for flexibility in multi-stage registration
+       return data.keys().hasAll(['name', 'managerName', 'phone', 'categoryId', 'ownerId', 'status', 'createdAt'])
+         && data.name is string 
+         && data.managerName is string 
+         && data.phone is string 
+         && data.ownerId is string && data.ownerId == request.auth.uid
+         && data.status is string 
+         && data.createdAt == request.time;
+    }
+
+    match /mokebs/{mokebId} {
+      allow read: if true;
+      
+      allow create: if isSignedIn()
+                    && isValidId(mokebId)
+                    && isValidMokeb(incoming());
+
+      allow update: if (isOwner(existing().ownerId)) || isAdmin();
+
+      allow delete: if isAdmin() || isOwner(existing().ownerId);
+    }
+    
+    match /sliders/{sliderId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /official_notices/{noticeId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /official_authorities/{authorityId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /operator_announcements/{announcementId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    match /tickets/{ticketId} {
+      allow list: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow get: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isSignedIn() 
+                    && isValidId(ticketId)
+                    && incoming().userId == request.auth.uid;
+      allow update: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow delete: if isAdmin();
+
+      match /messages/{messageId} {
+        allow read, write: if isSignedIn();
+      }
+    }
+  }
+}

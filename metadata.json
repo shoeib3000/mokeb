@@ -1,0 +1,6 @@
+{
+  "name": "کمیته مواکب قائد شهید امت",
+  "description": "سامانه ثبت نام، مدیریت و مسیریابی موکب‌های مراسم تشییع",
+  "requestFramePermissions": ["geolocation"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
